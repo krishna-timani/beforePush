@@ -5,9 +5,10 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function cleanAnswer(value) {
   let text = String(value || "").replace(/\r/g, "").trim();
-  if (/input data:|one immediate action|one practical code|no introduction|do not include an introduction|sanitized line:/i.test(text)) return "";
+  const starts = [...text.matchAll(/\*{0,2}\s*Risk\s*:\s*\*{0,2}/ig)];
+  if (starts.length) text = text.slice(starts[starts.length - 1].index);
   text = text.replace(/^\s*Draft\s*\d+\s*:\s*/i, "").replace(/\*{1,2}/g, "");
-  return text.split(/\s+/).slice(0, 90).join(" ");
+  return text.split(/\s+/).slice(0, 110).join(" ");
 }
 
 export default async function handler(request, response) {
@@ -35,7 +36,7 @@ export default async function handler(request, response) {
 
   const prompt = [
     "You are BeforePush, a developer security coach. A local scanner found a possible secret; its raw value was removed before this request.",
-    "Give a direct, beginner-friendly remediation. Explain the risk, one immediate action, and one safe code or configuration fix. Keep it under 70 words. Do not repeat the input or ask for the secret value.",
+    "Never ask for the real value or claim it is active. In under 100 words, explain the risk, immediate action, and practical code/config fix in beginner-friendly language.",
     "Rule: " + rule,
     "Severity: " + severity,
     "File type: " + fileType,
@@ -51,7 +52,7 @@ export default async function handler(request, response) {
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: 180, temperature: 0.2 }
+            generationConfig: { maxOutputTokens: 300 }
           }),
           signal: AbortSignal.timeout(25000)
         }
