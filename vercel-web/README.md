@@ -13,6 +13,10 @@ Files are scanned in the visitor's browser and are not uploaded. When requested,
 
 Google's API may occasionally return a server error. Local detection and safe advice remain available and the page offers a retry.
 
+## Custom domain
+
+In Vercel, open project `beforepush-vercel-web` → Settings → Domains → Add Domain. Enter the exact domain provided to you, then follow the DNS records Vercel displays. If the domain is managed by an event or third-party provider, ask its owner/admin to add those records; do not share their account password. Vercel marks the domain ready after DNS verification and provisions HTTPS automatically.
+
 ## Standout feature
 The downloadable Git pre-commit hook checks staged additions locally and blocks supported token patterns before commit. It does not send staged code to a service or print matched secret text.
 
