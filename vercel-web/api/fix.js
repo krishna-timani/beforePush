@@ -5,16 +5,9 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function cleanAnswer(value) {
   let text = String(value || "").replace(/\r/g, "").trim();
-  const starts = [...text.matchAll(/\*{0,2}\s*Risk\s*:\s*\*{0,2}/ig)];
-  if (starts.length) text = text.slice(starts[starts.length - 1].index);
-  text = text.replace(/^\s*(?:Draft\s*\d+\s*:\s*)+/i, "").replace(/\*{1,2}/g, "");
-  const lines = text.split("\n").map(line => line.trim()).filter(Boolean);
-  let remaining = 115;
-  return lines.filter((line, index) => lines.indexOf(line) === index).map(line => {
-    const words = line.split(/\s+/).slice(0, remaining);
-    remaining -= words.length;
-    return words.join(" ");
-  }).filter(Boolean).join("\n");
+  if (/input data:|one immediate action|one practical code|no introduction|do not include an introduction|sanitized line:/i.test(text)) return "";
+  text = text.replace(/^\s*Draft\s*\d+\s*:\s*/i, "").replace(/\*{1,2}/g, "");
+  return text.split(/\s+/).slice(0, 90).join(" ");
 }
 
 export default async function handler(request, response) {
@@ -42,7 +35,7 @@ export default async function handler(request, response) {
 
   const prompt = [
     "You are BeforePush, a developer security coach. A local scanner found a possible secret; its raw value was removed before this request.",
-    "Never ask for the real value or claim it is active. Reply in under 90 words, with exactly three labeled lines: Risk: (one sentence), Do now: (one immediate action), Fix: (one practical code/config change). Do not include an introduction, draft labels, or repeat this prompt.",
+    "Give a direct, beginner-friendly remediation. Explain the risk, one immediate action, and one safe code or configuration fix. Keep it under 70 words. Do not repeat the input or ask for the secret value.",
     "Rule: " + rule,
     "Severity: " + severity,
     "File type: " + fileType,
