@@ -3,7 +3,7 @@
 Separate Vercel web app; the original Streamlit app remains in the parent folder.
 
 ## Privacy and Gemma 4
-Files are scanned in the visitor's browser and are not uploaded. When requested, Gemma receives only the rule, severity, file extension, and redacted line. The API key stays in Vercel's server environment. Model: gemma-4-26b-a4b-it.
+Files are scanned in the visitor's browser and are not uploaded. When requested, Gemma receives only the rule, severity, file extension, and redacted line. The API key stays in Vercel's server environment. A Node.js server function calls the Gemma 4 API; it validates the redacted line, retries temporary 5xx/429 errors once, and never returns the key to the browser. Model: gemma-4-26b-a4b-it.
 
 ## Deploy
 1. Push the parent beforepush folder to GitHub. The existing .gitignore excludes .env; never commit a key.

@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/fix.py": {
+    "api/fix.js": {
       "maxDuration": 60
     }
   }
