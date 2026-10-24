@@ -3,6 +3,20 @@ const SECRET_RE = /(?:gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|A
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+function cleanAnswer(value) {
+  let text = String(value || "").replace(/\r/g, "").trim();
+  const starts = [...text.matchAll(/\*{0,2}\s*Risk\s*:\s*\*{0,2}/ig)];
+  if (starts.length) text = text.slice(starts[starts.length - 1].index);
+  text = text.replace(/^\s*(?:Draft\s*\d+\s*:\s*)+/i, "").replace(/\*{1,2}/g, "");
+  const lines = text.split("\n").map(line => line.trim()).filter(Boolean);
+  let remaining = 115;
+  return lines.filter((line, index) => lines.indexOf(line) === index).map(line => {
+    const words = line.split(/\s+/).slice(0, remaining);
+    remaining -= words.length;
+    return words.join(" ");
+  }).filter(Boolean).join("\n");
+}
+
 export default async function handler(request, response) {
   if (request.method !== "POST") {
     return response.status(405).json({ error: "Use POST for Gemma fix requests." });
@@ -28,7 +42,7 @@ export default async function handler(request, response) {
 
   const prompt = [
     "You are BeforePush, a developer security coach. A local scanner found a possible secret; its raw value was removed before this request.",
-    "Never ask for the real value or claim it is active. In under 100 words, explain the risk, immediate action, and practical code/config fix in beginner-friendly language.",
+    "Never ask for the real value or claim it is active. Reply in under 90 words, with exactly three labeled lines: Risk: (one sentence), Do now: (one immediate action), Fix: (one practical code/config change). Do not include an introduction, draft labels, or repeat this prompt.",
     "Rule: " + rule,
     "Severity: " + severity,
     "File type: " + fileType,
@@ -44,7 +58,7 @@ export default async function handler(request, response) {
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: 300 }
+            generationConfig: { maxOutputTokens: 180, temperature: 0.2 }
           }),
           signal: AbortSignal.timeout(25000)
         }
@@ -52,7 +66,7 @@ export default async function handler(request, response) {
 
       if (upstream.ok) {
         const result = await upstream.json();
-        const answer = (result.candidates || []).flatMap(c => c.content?.parts || []).map(p => p.text || "").join("").trim();
+        const answer = cleanAnswer((result.candidates || []).flatMap(c => c.content?.parts || []).map(p => p.text || "").join(""));
         if (answer) return response.status(200).json({ answer });
         return response.status(502).json({ error: "Gemma returned an empty answer. Retry." });
       }
